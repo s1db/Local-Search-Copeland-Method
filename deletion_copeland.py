@@ -74,7 +74,7 @@ def deletionCopelandFamily(preference_profile, step, deletion_ratio):
     assert len(familyipp[0]) == len(familycs[0])
     return (familyipp, familycs)
 
-def plot(directory, filename, show_plots_during_execution):
+def plot(directory, filename, step, deletion_ratio, show_plots_during_execution):
     # Reading pickled files and storing the data.
     pickled_file = open(directory + "_profiles/"+ filename+".vt", "rb")
     preference_profile = pickle.load(pickled_file)
@@ -89,7 +89,7 @@ def plot(directory, filename, show_plots_during_execution):
     true_copeland_score = [i/candidates for i in true_copeland_score]
     pickled_file.close()
 
-    ipp, cs = deletionCopeland(preference_profile, 10, 0.4)
+    ipp, cs = deletionCopeland(preference_profile, step, deletion_ratio)
     cs = [i/len(cs) for i in cs]
     not_deleted_candidate_ids = []
     for i, x in enumerate(preference_profile.tolist()):
@@ -107,7 +107,7 @@ def plot(directory, filename, show_plots_during_execution):
     if show_plots_during_execution:
         plt.show()
     
-def plot_gif(directory, filename):
+def plot_gif(directory, filename, step, deletion_ratio):
     # Reading pickled files and storing the data.
     pickled_file = open(directory + "_profiles/"+ filename+".vt", "rb")
     preference_profile = pickle.load(pickled_file)
@@ -122,7 +122,7 @@ def plot_gif(directory, filename):
     true_copeland_score = [i/candidates for i in true_copeland_score]
     pickled_file.close()
 
-    familyipp, familycs = deletionCopelandFamily(preference_profile, 10, 0.6)
+    familyipp, familycs = deletionCopelandFamily(preference_profile, step, deletion_ratio)
     familyndci = []
     for i in range(len(familycs)):
         cs = familycs[i]
@@ -167,14 +167,15 @@ if __name__ == "__main__":
     PLOT_GIFS = True
     profile_types = ["inverted", "normal", "random", "search_more"]
     benchmarks = ["project_assignment", "photo_placement"]
+    step = 10
+    deletion_ratio = 0.6
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
         for profile_type in profile_types:
             for i in ['1','2','3','4', '5', '6']:
                 try:
-                    plot(benchmark, profile_type+str(i), SHOW_PLOTS_DURING_EXECUTION)
-                    print("    " + profile_type+str(i))
-                    plot_gif(benchmark, profile_type+str(i))
+                    plot(benchmark, profile_type+str(i), step, deletion_ratio, SHOW_PLOTS_DURING_EXECUTION)
+                    plot_gif(benchmark, profile_type+str(i), step, deletion_ratio)
                     print("    " + profile_type+str(i))
                 except Exception as e:
                     # print(e)

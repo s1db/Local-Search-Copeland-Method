@@ -1,0 +1,9 @@
+n_agents = 4;
+
+% transfered from the photo1.dzn instance from the MZN benchmark
+friends = [
+{1,3,4}, % 01
+{3,4},       % 02
+{1,3,4},   % 03
+{1,2,4},   % 04
+]

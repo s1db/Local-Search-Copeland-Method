@@ -8,7 +8,6 @@ In principle:
     3.) Set "maximize differences" as objective
     4.) Solve
 """
-print("Hello you")
 
 import logging
 from os import listdir
@@ -21,11 +20,11 @@ logging.basicConfig(filename="minizinc-python.log", level=logging.DEBUG)
 from minizinc import Instance, Model, Result, Solver, Status
 
 def generatePreferenceProfile(model, datafile):
-    model = Model("./models/"+model+"/"+model+".mzn") # "./models/photo_agents.mzn"
+    m = Model("./models/"+model+"/"+model+".mzn") # "./models/photo_agents.mzn"
     # Find the MiniZinc solver configuration for Gecode
     gecode = Solver.lookup("gecode")
     # Create an Instance of the n-Queens model for Gecode
-    instance = Instance(gecode, model)
+    instance = Instance(gecode, m)
     instance.add_file("./models/" + model + "/data/" + datafile + ".dzn")
     save_at = model+"_profiles/"
     try:
@@ -97,6 +96,8 @@ def generatePreferenceProfile(model, datafile):
         pref_profile = []
         search_more : bool = True
         no_solutions = 0
+        # if model == "project_assignment":
+        #     return None
         while search_more:
             with instance.branch() as inst:
                 if solution_pool: # once we have solutions, it makes sense to maximize diversity
@@ -119,8 +120,9 @@ def generatePreferenceProfile(model, datafile):
         with open(save_at+'search_more'+datafile+'.vt', 'wb') as f:
             pickle.dump(np.array(all_sol_pool), f)
             pickle.dump(np.array(pref_profile), f)
-    except:
+    except Exception as e:
         print("❌ FAILED ❌")
+        print(e)
         return None
 
 
@@ -129,5 +131,6 @@ if __name__ == "__main__":
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"
         datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]
+        print(datafiles)
         for datafile in datafiles:
             generatePreferenceProfile(benchmark, datafile)

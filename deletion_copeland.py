@@ -35,11 +35,6 @@ def copelandWrapper(preference_profile_segment):
     copeland_score = [i for x, i in enumerate(
         copeland_score) if x not in to_be_deleted]
     assert len(preference_profile_segment) == len(copeland_score)
-    # # Recomputing copeland score
-    # score_list = ic.pairwiseScoreCalcListFull(
-    #     preference_profile_segment, len(preference_profile_segment), agents)
-    # copeland_score = ic.copelandScoreFull(
-    #     score_list, len(preference_profile_segment), agents)
     return (preference_profile_segment, copeland_score)
 
 
@@ -72,29 +67,24 @@ def deletionCopeland(preference_profile, step, surviving_candidates):
 def deletionCopelandFamily(preference_profile, step, surviving_candidates):
     # Processing the data.
     candidates = len(preference_profile)
-    # We add a column on the 0th index to keep track of candidate IDs.
+    # We add a column on the 0th index to keep track of candidate IDs thus, we remove that column.
     agents = len(preference_profile[0]) - 1
     familyipp = []
     familycs = []
-    i_preference_profile = preference_profile[0:step]
+    i_preference_profile = None
     for i in range(0, candidates, step):
+        if i == 0:
+            i_preference_profile = preference_profile[0:step]
+        else: 
+            i_preference_profile = np.append(
+                i_preference_profile, preference_profile[i: i+step], axis=0)
         i_preference_profile, copeland_score = copelandWrapper(
             i_preference_profile)
         # Storing preference profile and associated copeland score
         familyipp.append(i_preference_profile)
         familycs.append(copeland_score)
-        # step-size equivalent no of candidates added.
-        i_preference_profile = np.append(
-            i_preference_profile, preference_profile[i: i+step], axis=0)
-    i_preference_profile, copeland_score = copelandWrapper(
-        i_preference_profile)
-    familyipp.append(i_preference_profile)
-    familycs.append(copeland_score)
     assert len(familyipp) == len(familycs)
     for i in range(len(familyipp)):
-        # print(len(familyipp[i]))
-        # print(len(familycs[i]))
-        # print("⭐")
         assert len(familyipp[i]) == len(familycs[i])
     return (familyipp, familycs)
 
@@ -108,8 +98,12 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
     candidates = len(preference_profile)
     agents = len(preference_profile[0])
 
+    # Augmenting preference profile with IDs.
+    preference_profile = np.insert(
+        preference_profile, 0, range(candidates), axis=1)
+
     score_list = ic.pairwiseScoreCalcListFull(
-        preference_profile, candidates, agents)
+        preference_profile[1:], candidates, agents)
     true_copeland_score = ic.copelandScoreFull(score_list, candidates, agents)
     # Relative Copeland Score
     true_copeland_score = [i/candidates for i in true_copeland_score]
@@ -160,69 +154,30 @@ def plot_gif(directory, filename, step, surviving_candidates):
         preference_profile, step, surviving_candidates)
     winners_index = np.argsort(true_copeland_score)[-5:].tolist()
     winners_value = [true_copeland_score[x] for x in winners_index]
-    assert len(familyipp) == len(familycs)
-    for i in range(len(familycs)):
-        assert len(familyipp[i]) == len(familycs[i])
+
     fig, ax1 = plt.subplots()
     camera = Camera(fig)
     for i in range(len(familyipp)):
         not_deleted_candidate_id = np.stack(
             familyipp[i], axis=0)[:, 0].tolist()
+        # print(not_deleted_candidate_id)
         cs = familycs[i]
-        cs = [j/len(cs) for j in cs]
+        cs = [j/(step+surviving_candidates) for j in cs]
         assert len(cs) == len(not_deleted_candidate_id)
         fig.suptitle('Copeland Scores')
         fig.set_size_inches(11.69, 8.27)
         ax1.set_ylim(-0.1, 1.1)
-        ax1.plot(range(candidates), true_copeland_score, 'bo')
+        ax1.plot(true_copeland_score, 'bo')
         ax1.plot(winners_index, winners_value, 'm*')
+        ax1.plot(not_deleted_candidate_id, cs, 'ro')
         ax1.legend(['Real Copeland Score', 'Copeland Score Post Deletion'])
         ax1.set_xlabel('Candidate IDs')
         ax1.set_ylabel('Normalised Copeland Score')
-        ax1.plot(not_deleted_candidate_id, cs, 'ro')
         camera.snap()
         # ax1.lines.pop(0)
     animation = camera.animate(blit=False)
     animation.save("plots/" + directory + "/gif/" +
                    filename + '.gif', writer='imagemagick')
-
-
-def plot_copeland_winner(directory, filename, step, surviving_candidates, winner_id):
-    # Reading pickled files and storing the data.
-    pickled_file = open(directory + "_profiles/" + filename+".vt", "rb")
-    preference_profile = pickle.load(pickled_file)
-    true_copeland_score = None
-    # Processing the data.
-    candidates = len(preference_profile)
-    agents = len(preference_profile[0])
-
-    score_list = ic.pairwiseScoreCalcListFull(
-        preference_profile, candidates, agents)
-    true_copeland_score = ic.copelandScoreFull(score_list, candidates, agents)
-    true_copeland_score = [i/candidates for i in true_copeland_score]
-    pickled_file.close()
-
-    familyipp, familycs = deletionCopelandFamily(
-        preference_profile, step, surviving_candidates)
-
-    assert len(familyipp) == len(familycs)
-    for i in range(len(familycs)):
-        assert len(familyipp[i]) == len(familycs[i])
-    winner_copeland_score = []
-    fig, ax1 = plt.subplots()
-    for i in range(len(familyipp)):
-        not_deleted_candidate_ids = familyndci[i]
-        cs = familycs[i]
-        cs = [j/len(cs) for j in cs]
-        fig.suptitle('Copeland Scores')
-        fig.set_size_inches(11.69, 8.27)
-        ax1.plot(range(candidates), true_copeland_score, 'bo')
-        ax1.legend(['Real Copeland Score', 'Overall True Copeland Winners',
-                   'Copeland Score Post Deletion'])
-        ax1.set_xlabel('Candidate IDs')
-        ax1.set_ylabel('Normalised Copeland Score')
-        ax1.plot(not_deleted_candidate_ids, cs, 'ro')
-        # ax1.lines.pop(0)
 
 
 def change_frame_rate(benchmark):
@@ -244,15 +199,15 @@ if __name__ == "__main__":
     profile_types = ["inverted", "normal", "random", "search_more"]
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
-        for profile_type in profile_types:
-            for i in ['1', '2', '3', '4', '5', '6']:  # , '1','2','3','4', '5', '6'
-                try:
-                    plot(benchmark, profile_type+str(i), step,
-                         surviving_candidates, SHOW_PLOTS_DURING_EXECUTION)
-                    plot_gif(benchmark, profile_type+str(i),
-                             step, surviving_candidates)
-                    print("    " + profile_type+str(i))
-                except Exception as e:
-                    print(e)
-                    None
+        for i in ['1', '2', '3', '4', '5', '6']:  # , '1','2','3','4', '5', '6'
+            for profile_type in profile_types:
+                # try:
+                #     plot(benchmark, profile_type+str(i), step,
+                #          surviving_candidates, SHOW_PLOTS_DURING_EXECUTION)
+                plot_gif(benchmark, profile_type+str(i),
+                            step, surviving_candidates)
+                print("    " + profile_type+str(i))
+                # except Exception as e:
+                #     print(e)
+                #     None
         change_frame_rate(benchmark)

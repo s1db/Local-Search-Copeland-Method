@@ -4,6 +4,7 @@ TODO:
     - [ ] Put deletion step as a function.
 '''
 
+from numpy.core.fromnumeric import sort
 import iterative_copeland as ic
 import pickle
 import numpy as np
@@ -15,7 +16,7 @@ from os.path import isfile, join
 
 import matplotlib.pyplot as plt
 
-def copelandWrapper(preference_profile_segment):
+def copelandWrapper(preference_profile_segment, surviving_candidates):
     agents = len(preference_profile_segment[0]) - 1
     candidates = len(preference_profile_segment)
     # calculation of pairwise score and copeland score
@@ -28,40 +29,34 @@ def copelandWrapper(preference_profile_segment):
     no_of_deleted_candidates = len(
         preference_profile_segment) - surviving_candidates
     # Takes the highest x candidates
-    to_be_deleted = sorted_copeland_score[0:no_of_deleted_candidates]
-
-    preference_profile_segment = [i for x, i in enumerate(
-        preference_profile_segment) if x not in to_be_deleted]
-    copeland_score = [i for x, i in enumerate(
-        copeland_score) if x not in to_be_deleted]
+    to_be_kept = sorted_copeland_score[no_of_deleted_candidates:]
+    assert len(sorted_copeland_score) == len(copeland_score) == preference_profile_segment.shape[0]
+    preference_profile_segment = [preference_profile_segment[x] for x in to_be_kept] #[i for x, i in enumerate(preference_profile_segment) if x not in to_be_deleted]
+    copeland_score = [copeland_score[x] for x in to_be_kept] #[i for x, i in enumerate(copeland_score) if x not in to_be_deleted]
     assert len(preference_profile_segment) == len(copeland_score)
     return (preference_profile_segment, copeland_score)
 
+def benchmark(indexes, deletion_copeland_scores, copeland_scores):
+    pass
 
 def deletionCopeland(preference_profile, step, surviving_candidates):
     # Processing the data.
     candidates = len(preference_profile)
     agents = len(preference_profile[0])
-    i_preference_profile = []
+    i_preference_profile = None
     for i in range(0, candidates, step):
         # Growing set of candidiates.
-        i_preference_profile.extend(preference_profile[i: i+step])
-        score_list = ic.pairwiseScoreCalcListFull(
-            i_preference_profile, len(i_preference_profile), agents)
-        copeland_score = ic.copelandScoreFull(
-            score_list, len(i_preference_profile), agents)
-
-        sorted_copeland_score = np.argsort(copeland_score)
-        no_of_deleted_candidates = len(
-            i_preference_profile) - surviving_candidates
-
-        to_be_deleted = sorted_copeland_score[0:no_of_deleted_candidates]
-        i_preference_profile = [i for j, i in enumerate(
-            i_preference_profile) if j not in to_be_deleted]
-    score_list = ic.pairwiseScoreCalcListFull(
-        i_preference_profile, len(i_preference_profile), agents)
-    copeland_score = ic.copelandScoreFull(
-        score_list, len(i_preference_profile), agents)
+        if i == 0:
+            i_preference_profile = preference_profile[0:step]
+        else: 
+            i_preference_profile = np.append(
+                i_preference_profile, preference_profile[i: i+step], axis=0)
+        i_preference_profile, copeland_score = copelandWrapper(
+            i_preference_profile, surviving_candidates)
+    # score_list = ic.pairwiseScoreCalcListFull(
+    #     i_preference_profile, len(i_preference_profile), agents)
+    # copeland_score = ic.copelandScoreFull(
+    #     score_list, len(i_preference_profile), agents)
     return (i_preference_profile, copeland_score)
 
 def deletionCopelandFamily(preference_profile, step, surviving_candidates):
@@ -79,7 +74,7 @@ def deletionCopelandFamily(preference_profile, step, surviving_candidates):
             i_preference_profile = np.append(
                 i_preference_profile, preference_profile[i: i+step], axis=0)
         i_preference_profile, copeland_score = copelandWrapper(
-            i_preference_profile)
+            i_preference_profile, surviving_candidates)
         # Storing preference profile and associated copeland score
         familyipp.append(i_preference_profile)
         familycs.append(copeland_score)
@@ -103,7 +98,7 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
         preference_profile, 0, range(candidates), axis=1)
 
     score_list = ic.pairwiseScoreCalcListFull(
-        preference_profile[1:], candidates, agents)
+        preference_profile[:, 1:], candidates, agents)
     true_copeland_score = ic.copelandScoreFull(score_list, candidates, agents)
     # Relative Copeland Score
     true_copeland_score = [i/candidates for i in true_copeland_score]
@@ -111,17 +106,19 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
 
     ipp, cs = deletionCopeland(
         preference_profile, step, surviving_candidates)
-    cs = [i/len(cs) for i in cs]
-    not_deleted_candidate_ids = []
-    for i, x in enumerate(preference_profile.tolist()):
-        if x in np.array(ipp).tolist():
-            not_deleted_candidate_ids.append(i)
-
+    cs = [i/(step+surviving_candidates) for i in cs]
+    not_deleted_candidate_ids = np.stack(ipp, axis=0)[:, 0].tolist()
+    winners_index = np.argsort(true_copeland_score)[-5:].tolist()
+    winners_value = [true_copeland_score[x] for x in winners_index]
+    true_copeland_score_deletion_labels = [true_copeland_score[i] for i in not_deleted_candidate_ids]    
+    
     fig, (ax1) = plt.subplots(1)
     fig.suptitle('Copeland Scores')
     fig.set_size_inches(11.69, 8.27)
+    ax1.plot(true_copeland_score, 'bo')
+    ax1.plot(winners_index, winners_value, 'm*')
     ax1.plot(not_deleted_candidate_ids, cs, 'ro')
-    ax1.plot(range(candidates), true_copeland_score, 'bo')
+    ax1.plot(not_deleted_candidate_ids, true_copeland_score_deletion_labels, 'y+')
     # encircled_true_copeland_scores = []
     # ax1.plot(, true_copeland_score, 'ro')
     ax1.legend(['Copeland Score Post Deletion', 'Real Copeland Score'])
@@ -160,6 +157,7 @@ def plot_gif(directory, filename, step, surviving_candidates):
     for i in range(len(familyipp)):
         not_deleted_candidate_id = np.stack(
             familyipp[i], axis=0)[:, 0].tolist()
+        true_copeland_score_deletion_labels = [true_copeland_score[i] for i in not_deleted_candidate_id]
         # print(not_deleted_candidate_id)
         cs = familycs[i]
         cs = [j/(step+surviving_candidates) for j in cs]
@@ -170,6 +168,7 @@ def plot_gif(directory, filename, step, surviving_candidates):
         ax1.plot(true_copeland_score, 'bo')
         ax1.plot(winners_index, winners_value, 'm*')
         ax1.plot(not_deleted_candidate_id, cs, 'ro')
+        ax1.plot(not_deleted_candidate_id, true_copeland_score_deletion_labels, 'y+')
         ax1.legend(['Real Copeland Score', 'Copeland Score Post Deletion'])
         ax1.set_xlabel('Candidate IDs')
         ax1.set_ylabel('Normalised Copeland Score')
@@ -195,19 +194,19 @@ if __name__ == "__main__":
     PLOT_GIFS = True
     benchmarks = ["project_assignment", "photo_placement"]
     step = 20
-    surviving_candidates = 7
+    surviving_candidates = 10
     profile_types = ["inverted", "normal", "random", "search_more"]
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
         for i in ['1', '2', '3', '4', '5', '6']:  # , '1','2','3','4', '5', '6'
             for profile_type in profile_types:
-                # try:
-                #     plot(benchmark, profile_type+str(i), step,
-                #          surviving_candidates, SHOW_PLOTS_DURING_EXECUTION)
-                plot_gif(benchmark, profile_type+str(i),
-                            step, surviving_candidates)
-                print("    " + profile_type+str(i))
-                # except Exception as e:
-                #     print(e)
-                #     None
+                try:
+                    plot(benchmark, profile_type+str(i), step,
+                            surviving_candidates, SHOW_PLOTS_DURING_EXECUTION)
+                    plot_gif(benchmark, profile_type+str(i),
+                                step, surviving_candidates)
+                    print("    " + profile_type+str(i))
+                except Exception as e:
+                    # print(e)
+                    None
         change_frame_rate(benchmark)

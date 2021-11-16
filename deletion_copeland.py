@@ -31,13 +31,18 @@ def copelandWrapper(preference_profile_segment, surviving_candidates):
     # Takes the highest x candidates
     to_be_kept = sorted_copeland_score[no_of_deleted_candidates:]
     assert len(sorted_copeland_score) == len(copeland_score) == preference_profile_segment.shape[0]
-    preference_profile_segment = [preference_profile_segment[x] for x in to_be_kept] #[i for x, i in enumerate(preference_profile_segment) if x not in to_be_deleted]
-    copeland_score = [copeland_score[x] for x in to_be_kept] #[i for x, i in enumerate(copeland_score) if x not in to_be_deleted]
+    preference_profile_segment = [preference_profile_segment[x] for x in to_be_kept]
+    copeland_score = [copeland_score[x] for x in to_be_kept]
     assert len(preference_profile_segment) == len(copeland_score)
     return (preference_profile_segment, copeland_score)
 
-def benchmark(indexes, deletion_copeland_scores, copeland_scores):
-    pass
+def score_comparison(indexes, deletion_copeland_scores, copeland_scores):
+    deletion_winner_cs = max(deletion_copeland_scores) # Copeland winner of deletion algorithm
+    id_of_deletion_winner = indexes[deletion_copeland_scores.index(deletion_winner_cs)] # ID of Copeland winner of deletion algorithm 
+    ground_truth_score_of_deletion_winner = copeland_scores[id_of_deletion_winner] # Ground Truth Copeland Score of defined ID
+    ground_truth_winner_cs = max(copeland_scores) # Ground Truth Copeland Winner
+    print("        GT Winner vs Deletion Winner(on GT)       :"+ str(ground_truth_winner_cs / ground_truth_score_of_deletion_winner))
+    print("        Deletion Winner(on GT) vs Deletion Winner :"+ str(deletion_winner_cs / ground_truth_score_of_deletion_winner))
 
 def deletionCopeland(preference_profile, step, surviving_candidates):
     # Processing the data.
@@ -103,7 +108,6 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
     # Relative Copeland Score
     true_copeland_score = [i/candidates for i in true_copeland_score]
     pickled_file.close()
-
     ipp, cs = deletionCopeland(
         preference_profile, step, surviving_candidates)
     cs = [i/(step+surviving_candidates) for i in cs]
@@ -111,16 +115,15 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
     winners_index = np.argsort(true_copeland_score)[-5:].tolist()
     winners_value = [true_copeland_score[x] for x in winners_index]
     true_copeland_score_deletion_labels = [true_copeland_score[i] for i in not_deleted_candidate_ids]    
+    score_comparison(not_deleted_candidate_ids, cs, true_copeland_score)
     
     fig, (ax1) = plt.subplots(1)
-    fig.suptitle('Copeland Scores')
+    fig.suptitle(directory + ' ' + filename)
     fig.set_size_inches(11.69, 8.27)
-    ax1.plot(true_copeland_score, 'bo')
-    ax1.plot(winners_index, winners_value, 'm*')
+    ax1.plot(true_copeland_score, 'b.')
     ax1.plot(not_deleted_candidate_ids, cs, 'ro')
-    ax1.plot(not_deleted_candidate_ids, true_copeland_score_deletion_labels, 'y+')
-    # encircled_true_copeland_scores = []
-    # ax1.plot(, true_copeland_score, 'ro')
+    ax1.plot(not_deleted_candidate_ids, true_copeland_score_deletion_labels, 'm*')
+    ax1.plot(winners_index, winners_value, 'y+')
     ax1.legend(['Copeland Score Post Deletion', 'Real Copeland Score'])
     ax1.set_xlabel('Candidate IDs')
     ax1.set_ylabel('Normalised Copeland Score')
@@ -162,13 +165,13 @@ def plot_gif(directory, filename, step, surviving_candidates):
         cs = familycs[i]
         cs = [j/(step+surviving_candidates) for j in cs]
         assert len(cs) == len(not_deleted_candidate_id)
-        fig.suptitle('Copeland Scores')
+        fig.suptitle(directory + ' ' + filename)
         fig.set_size_inches(11.69, 8.27)
         ax1.set_ylim(-0.1, 1.1)
         ax1.plot(true_copeland_score, 'bo')
-        ax1.plot(winners_index, winners_value, 'm*')
+        ax1.plot(winners_index, winners_value, 'y+')
         ax1.plot(not_deleted_candidate_id, cs, 'ro')
-        ax1.plot(not_deleted_candidate_id, true_copeland_score_deletion_labels, 'y+')
+        ax1.plot(not_deleted_candidate_id, true_copeland_score_deletion_labels, 'm*')
         ax1.legend(['Real Copeland Score', 'Copeland Score Post Deletion'])
         ax1.set_xlabel('Candidate IDs')
         ax1.set_ylabel('Normalised Copeland Score')
@@ -194,18 +197,18 @@ if __name__ == "__main__":
     PLOT_GIFS = True
     benchmarks = ["project_assignment", "photo_placement"]
     step = 20
-    surviving_candidates = 10
+    surviving_candidates = 20
     profile_types = ["inverted", "normal", "random", "search_more"]
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
         for i in ['1', '2', '3', '4', '5', '6']:  # , '1','2','3','4', '5', '6'
             for profile_type in profile_types:
                 try:
+                    print("    " + profile_type+str(i))
                     plot(benchmark, profile_type+str(i), step,
                             surviving_candidates, SHOW_PLOTS_DURING_EXECUTION)
                     plot_gif(benchmark, profile_type+str(i),
                                 step, surviving_candidates)
-                    print("    " + profile_type+str(i))
                 except Exception as e:
                     # print(e)
                     None

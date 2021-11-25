@@ -20,9 +20,11 @@ logging.basicConfig(filename="minizinc-python.log", level=logging.DEBUG)
 from minizinc import Instance, Model, Result, Solver, Status
 
 def generatePreferenceProfile(model, datafile):
-    m = Model("./models/"+model+"/"+model+".mzn") # "./models/photo_agents.mzn"
+    model_file = "./models/"+model+"/"+model+".mzn"
+    print(model_file)
+    m = Model("./models/"+model+"/"+model+".mzn") # "./models/photo_placement.mzn"
     # Find the MiniZinc solver configuration for Gecode
-    gecode = Solver.lookup("gecode")
+    gecode = Solver.lookup("chuffed")
     # Create an Instance of the n-Queens model for Gecode
     instance = Instance(gecode, m)
     instance.add_file("./models/" + model + "/data/" + datafile + ".dzn")
@@ -42,8 +44,9 @@ def generatePreferenceProfile(model, datafile):
             with open(save_at+ 'normal'+datafile+'.vt', 'wb') as f:
                 pickle.dump(np.array(all_sol_pool), f)
                 pickle.dump(np.array(pref_profile), f)
-    except:
+    except Exception as e:
         print("❌ FAILED ❌")
+        print(e)
         return None
     try:
         # Inverted traversal of solutions
@@ -60,8 +63,9 @@ def generatePreferenceProfile(model, datafile):
             with open(save_at + 'inverted'+datafile+'.vt', 'wb') as f:
                 pickle.dump(np.array(all_sol_pool), f)
                 pickle.dump(np.array(pref_profile), f)
-    except:
+    except Exception as e:
         print("❌ FAILED ❌")
+        print(e)
         return None
     try:
         # Random traversal of solutions
@@ -79,8 +83,9 @@ def generatePreferenceProfile(model, datafile):
             with open(save_at+'random'+datafile+'.vt', 'wb') as f:
                 pickle.dump(np.array(all_sol_pool), f)
                 pickle.dump(np.array(pref_profile), f)
-    except:
+    except Exception as e:
         print("❌ FAILED ❌")
+        print(e)
         return None
     try:
         # Maximizing diversity of solutions
@@ -127,7 +132,7 @@ def generatePreferenceProfile(model, datafile):
 
 
 if __name__ == "__main__":
-    benchmarks = ["project_assignment", "photo_placement"]
+    benchmarks = ["photo_placement_bipolar"]
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"
         datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]

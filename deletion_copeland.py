@@ -195,7 +195,7 @@ def change_frame_rate(benchmark):
 if __name__ == "__main__":
     SHOW_PLOTS_DURING_EXECUTION = False
     PLOT_GIFS = True
-    benchmarks = ["project_assignment", "photo_placement"]
+    benchmarks = [ "photo_placement_bipolar_profiles"]
     step = 20
     surviving_candidates = 20
     profile_types = ["inverted", "normal", "random", "search_more"]
@@ -210,6 +210,6 @@ if __name__ == "__main__":
                     plot_gif(benchmark, profile_type+str(i),
                                 step, surviving_candidates)
                 except Exception as e:
-                    # print(e)
+                    print(e)
                     None
         change_frame_rate(benchmark)

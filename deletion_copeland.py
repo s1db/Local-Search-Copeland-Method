@@ -39,8 +39,8 @@ def score_comparison(indexes, deletion_copeland_scores, copeland_scores):
     id_of_deletion_winner = indexes[deletion_copeland_scores.index(deletion_winner_cs)] # ID of Copeland winner of deletion algorithm 
     ground_truth_score_of_deletion_winner = copeland_scores[id_of_deletion_winner] # Ground Truth Copeland Score of defined ID
     ground_truth_winner_cs = max(copeland_scores) # Ground Truth Copeland Winner
-    print("        GT Winner vs Deletion Winner(on GT)       :"+ str(ground_truth_winner_cs / ground_truth_score_of_deletion_winner))
-    print("        Deletion Winner(on GT) vs Deletion Winner :"+ str(deletion_winner_cs / ground_truth_score_of_deletion_winner))
+    print("        Reliability: GT Winner vs Deletion Winner(on GT)       :"+ str(ground_truth_winner_cs / ground_truth_score_of_deletion_winner))
+    print("        Gap:         Deletion Winner(on GT) vs Deletion Winner :"+ str(abs(deletion_winner_cs - ground_truth_score_of_deletion_winner) / ground_truth_score_of_deletion_winner))
 
 def deletionCopeland(utility_profile, step, surviving_candidates, budget):
     # Processing the data.

@@ -14,6 +14,7 @@ from os import listdir
 from os.path import isfile, join
 import pickle
 import numpy as np
+import iterative_copeland as ic
 
 logging.basicConfig(filename="minizinc-python.log", level=logging.DEBUG)
 
@@ -41,9 +42,12 @@ def generatePreferenceProfile(model, datafile):
             for i in range(len(result)):
                 all_sol_pool.append(result[i, "diversity_variables_of_interest"])
                 pref_profile.append(result[i, "util_per_agent"])
+            score_list = ic.pairwiseScoreCalcListFull(pref_profile, len(pref_profile), len(pref_profile[0]))
+            true_copeland_score = ic.copelandScoreFull(score_list, len(pref_profile), len(pref_profile[0]))            
             with open(save_at+ 'normal'+datafile+'.vt', 'wb') as f:
                 pickle.dump(np.array(all_sol_pool), f)
                 pickle.dump(np.array(pref_profile), f)
+                pickle.dump(true_copeland_score, f)
             print("all_sol_pool", len(all_sol_pool))
             print("pref_profile", len(pref_profile))
     except Exception as e:
@@ -145,3 +149,4 @@ if __name__ == "__main__":
         for datafile in datafiles:
             print(datafile)
             generatePreferenceProfile(benchmark, datafile)
+            

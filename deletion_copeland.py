@@ -15,6 +15,7 @@ def copelandWrapper(utility_profile_segment, surviving_candidates):
     agents = len(utility_profile_segment[0]) - 1
     candidates = len(utility_profile_segment)
     # calculation of pairwise score and copeland score
+    # removes the ID column from the utility profile
     score_list = ic.pairwiseScoreCalcListFull(
         utility_profile_segment[:, 1:], candidates, agents)
     copeland_score = ic.copelandScoreFull(score_list, candidates, agents)

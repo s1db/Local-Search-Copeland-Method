@@ -195,7 +195,7 @@ def change_frame_rate(benchmark):
 if __name__ == "__main__":
     SHOW_PLOTS_DURING_EXECUTION = False
     PLOT_GIFS = True
-    benchmarks = [ "photo_placement_bipolar_profiles"]
+    benchmarks = [ "photo_placement_bipolar"]
     step = 20
     surviving_candidates = 20
     profile_types = ["inverted", "normal", "random", "search_more"]

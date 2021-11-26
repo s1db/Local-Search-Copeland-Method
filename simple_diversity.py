@@ -48,6 +48,7 @@ def generatePreferenceProfile(model, datafile):
         print("❌ FAILED ❌")
         print(e)
         return None
+
     try:
         # Inverted traversal of solutions
         print("Inverted traversal")

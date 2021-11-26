@@ -42,13 +42,13 @@ def score_comparison(indexes, deletion_copeland_scores, copeland_scores):
     print("        GT Winner vs Deletion Winner(on GT)       :"+ str(ground_truth_winner_cs / ground_truth_score_of_deletion_winner))
     print("        Deletion Winner(on GT) vs Deletion Winner :"+ str(deletion_winner_cs / ground_truth_score_of_deletion_winner))
 
-def deletionCopeland(utility_profile, step, surviving_candidates):
+def deletionCopeland(utility_profile, step, surviving_candidates, budget):
     # Processing the data.
     candidates = len(utility_profile)
     agents = len(utility_profile[0])
     i_utility_profile = None
     copeland_score = None
-    for i in range(0, candidates, step):
+    for i in range(0, budget, step):
         # Growing set of candidiates.
         if i == 0:
             i_utility_profile = utility_profile[0:step]
@@ -61,7 +61,7 @@ def deletionCopeland(utility_profile, step, surviving_candidates):
     assert i_utility_profile != None and copeland_score != None
     return (i_utility_profile, copeland_score)
 
-def deletionCopelandFamily(utility_profile, step, surviving_candidates):
+def deletionCopelandFamily(utility_profile, step, surviving_candidates, budget):
     # Processing the data.
     candidates = len(utility_profile)
     # We add a column on the 0th index to keep track of candidate IDs thus, we remove that column.
@@ -69,7 +69,7 @@ def deletionCopelandFamily(utility_profile, step, surviving_candidates):
     familyipp = []
     familycs = []
     i_utility_profile = None
-    for i in range(0, candidates, step):
+    for i in range(0, budget, step):
         if i == 0:
             i_utility_profile = utility_profile[0:step]
         else: 
@@ -86,7 +86,7 @@ def deletionCopelandFamily(utility_profile, step, surviving_candidates):
     return (familyipp, familycs)
 
 
-def plot(directory, filename, step, surviving_candidates, show_plots_during_execution):
+def plot(directory, filename, step, surviving_candidates, budget, show_plots_during_execution):
     # Reading pickled files and storing the data.
     pickled_file = open(directory + "_profiles/" + filename+".vt", "rb")
     preference_profile = pickle.load(pickled_file)
@@ -107,7 +107,7 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
     true_copeland_score = [i/candidates for i in true_copeland_score]
     pickled_file.close()
     ipp, cs = deletionCopeland(
-        utility_profile, step, surviving_candidates)
+        utility_profile, step, surviving_candidates,budget)
     cs = [i/(step+surviving_candidates) for i in cs]
     not_deleted_candidate_ids = np.stack(ipp, axis=0)[:, 0].tolist()
     winners_index = np.argsort(true_copeland_score)[-5:].tolist()
@@ -130,7 +130,7 @@ def plot(directory, filename, step, surviving_candidates, show_plots_during_exec
         plt.show()
 
 
-def plot_gif(directory, filename, step, surviving_candidates):
+def plot_gif(directory, filename, step, surviving_candidates, budget):
     # Reading pickled files and storing the data.
     pickled_file = open(directory + "_profiles/" + filename+".vt", "rb")
 
@@ -150,7 +150,7 @@ def plot_gif(directory, filename, step, surviving_candidates):
     pickled_file.close()
 
     familyipp, familycs = deletionCopelandFamily(
-        utility_profile, step, surviving_candidates)
+        utility_profile, step, surviving_candidates,budget)
     winners_index = np.argsort(true_copeland_score)[-5:].tolist()
     winners_value = [true_copeland_score[x] for x in winners_index]
 
@@ -191,19 +191,20 @@ if __name__ == "__main__":
     SHOW_PLOTS_DURING_EXECUTION = False
     PLOT_GIFS = True
     benchmarks = [ "photo_placement_bipolar"]
-    step = 20
-    surviving_candidates = 20
-    profile_types = ["inverted", "normal", "random", "search_more"]
+    step = 100
+    surviving_candidates = 50
+    budget = 500
+    profile_types = ["inverted", "normal"] # "random", "search_more"
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
-        for i in ['1', '2', '3', '4', '5', '6']:  # , '1','2','3','4', '5', '6'
+        for i in range(1,10):  # , '1','2','3','4', '5', '6'
             for profile_type in profile_types:
                 try:
                     print("    " + profile_type+str(i))
                     plot(benchmark, profile_type+str(i), step,
-                            surviving_candidates, SHOW_PLOTS_DURING_EXECUTION)
-                    plot_gif(benchmark, profile_type+str(i),
-                                step, surviving_candidates)
+                            surviving_candidates, budget, SHOW_PLOTS_DURING_EXECUTION)
+                    # plot_gif(benchmark, profile_type+str(i),
+                    #             step, surviving_candidates, budget)
                 except Exception as e:
                     print(e)
                     None

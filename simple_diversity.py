@@ -137,10 +137,11 @@ def generatePreferenceProfile(model, datafile):
     #     return None
 
 if __name__ == "__main__":
-    benchmarks = ["photo_placement", "project_assignment", "photo_placement_bipolar"]
+    benchmarks = ["photo_placement_bipolar"] #, "project_assignment", "photo_placement_bipolar"
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"
         datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]
         print(datafiles)
         for datafile in datafiles:
+            print(datafile)
             generatePreferenceProfile(benchmark, datafile)

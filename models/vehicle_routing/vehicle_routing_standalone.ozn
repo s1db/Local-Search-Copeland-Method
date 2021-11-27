@@ -1,0 +1,9 @@
+output ["next = array1d(1..5, ",show(next),");\n","arrivalTime = array1d(1..5, ",show(arrivalTime),");\n","startOfVisit = array1d(1..5, ",show(startOfVisit),");\n","travel_time = ",show(travel_time),";\n","util_per_agent = array1d(1..3, ",show(util_per_agent),");\n","social_welfare = ",show(social_welfare),";\n"];
+set of int: Site = 1..5;
+array [Site] of int: next;
+array [Site] of int: arrivalTime;
+array [Site] of int: startOfVisit;
+int: travel_time;
+set of int: AGENTS = 1..3;
+array [AGENTS] of int: util_per_agent;
+int: social_welfare;

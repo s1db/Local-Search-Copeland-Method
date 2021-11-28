@@ -6,6 +6,7 @@ import deletion_copeland as dc
 import random
 import pickle
 import matplotlib.pyplot as plt
+from datetime import timedelta
 
 from minizinc import Instance, Model, Result, Solver, Status
 
@@ -15,7 +16,7 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     # Initialize the model 
     m = Model(model_path) 
     # Solver and instance definition
-    gecode = Solver.lookup("gecode")
+    gecode = Solver.lookup("chuffed")
     instance = Instance(gecode, m)
     instance.add_file("./models/" + model + "/data/" + datafile + ".dzn")
     save_at = model+"_profiles/"
@@ -36,6 +37,8 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     # Our utility preference profile
     pref_profile  = []
     search_more : bool = True
+    timeout = timedelta(seconds=15)
+
     no_solutions = 0
     restart = True
     seed = 0
@@ -47,11 +50,12 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
                 # removes the id from the solutions
                 inst["old_solutions"] = np.stack(sol_pool, axis=0)[:,1:].flatten().tolist()
             else: # otherwise, we just aim to satisfy the constraints
-                # inst.add_string("solve satisfy;")
-                inst.add_string("solve :: int_search(diversity_variables_of_interest, input_order, indomain_random, complete) satisfy;")
+                inst.add_string("solve satisfy;")
+                #inst.add_string("solve :: int_search(diversity_variables_of_interest, input_order, indomain_random, complete) satisfy;")
                 inst["old_solutions"] = []
                 restart = False
-            res = inst.solve(random_seed=seed)
+
+            res = inst.solve(random_seed=seed, timeout = timeout)
             if res.solution is not None:
                 if tuple(res["diversity_variables_of_interest"]) not in all_solutions_seen:
                     all_solutions_seen.add(tuple(res["diversity_variables_of_interest"]))
@@ -133,8 +137,8 @@ def generatePlot(directory, filename, true_copeland_score, not_deleted_candidate
         plt.show()
 
 if __name__ == "__main__":
-    benchmarks = ["project_assignment", "photo_placement", "photo_placement_bipolar"]
-    benchmark = benchmarks[2]
+    benchmarks = ["project_assignment", "photo_placement_bipolar"]
+    benchmark = benchmarks[1]
     directory = "./models/"+benchmark+"/data"
     datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))][-2:-1]
     print(datafiles)
@@ -144,7 +148,7 @@ if __name__ == "__main__":
         gt_util_profile = pickle.load(pickled_file)
         gt_copeland_score = pickle.load(pickled_file)
         gt_copeland_score = [i/len(gt_copeland_score) for i in gt_copeland_score]
-        solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 60, 30, 500)
+        solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 60, 30, 80)
         ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
         print(ids_in_complete_search)
         print(copeland_scores)

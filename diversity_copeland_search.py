@@ -55,6 +55,7 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
                 inst["old_solutions"] = []
                 restart = False
 
+            # , intermediate_solutions=True, all_solutions=True
             res = inst.solve(random_seed=seed, timeout = timeout)
             if res.solution is not None:
                 if tuple(res["diversity_variables_of_interest"]) not in all_solutions_seen:

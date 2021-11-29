@@ -148,13 +148,13 @@ if __name__ == "__main__":
     models = ["project_assignment"] #, "project_assignment", "photo_placement_bipolar"
     models = ["photo_placement_bipolar", "project_assignment", "vehicle_routing", "scheduling"]
     #models = ["scheduling"]
-    #models = ["vehicle_routing"]
+    models = ["vehicle_routing"]
 
     for model in models:
         directory = f"./models/{model}/data"
         datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]
         print(datafiles)
-        for datafile in datafiles :   #[:1]: # just the first for now:
+        for datafile in datafiles[2:] :   #[:1]: # just the first for now:
             print(datafile)
 
             #for annot in [NORMAL]:

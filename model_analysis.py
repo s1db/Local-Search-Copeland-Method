@@ -154,7 +154,7 @@ if __name__ == "__main__":
         directory = f"./models/{model}/data"
         datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]
         print(datafiles)
-        for datafile in datafiles[2:] :   #[:1]: # just the first for now:
+        for datafile in datafiles[1:] :   #[:1]: # just the first for now:
             print(datafile)
 
             #for annot in [NORMAL]:

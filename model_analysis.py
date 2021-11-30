@@ -147,8 +147,8 @@ def plot_gif(welfares, model, data, search_annot):
 if __name__ == "__main__":
     models = ["project_assignment"] #, "project_assignment", "photo_placement_bipolar"
     models = ["photo_placement_bipolar", "project_assignment", "vehicle_routing", "scheduling"]
-    #models = ["scheduling"]
-    models = ["vehicle_routing"]
+    models = ["scheduling"]
+    #models = ["vehicle_routing"]
 
     for model in models:
         directory = f"./models/{model}/data"

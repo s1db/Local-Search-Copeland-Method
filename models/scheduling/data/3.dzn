@@ -1,0 +1,9 @@
+n_agents = 3;
+n_tasks = 2;
+n_jobs = 3;
+
+dur = [| 5, 2 | 4, 5 | 2, 4 |];
+taskToMach =  [| 1, 2 | 2, 1 | 1, 2 |];
+
+owner = [1, 2, 3];
+max_makespan = 13;

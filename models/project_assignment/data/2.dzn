@@ -1,0 +1,14 @@
+% project_assignment_1.dzn
+
+n = 5; % 4 students to consider
+p = 5; % topics
+l = 5;
+
+projectToLecturer = [1, 2, 3, 4, 5];
+
+% student 1 ranks project 1 at 1, project 2 at 4, etc. 
+studentProjectRanks = [| 2, 3, 4, 5, 1 |
+                         5, 1, 3, 2, 4 |
+                         4, 5, 1, 3, 2 |
+                         1, 2, 5, 4, 3 |
+                         3, 2, 4, 5, 1 |];

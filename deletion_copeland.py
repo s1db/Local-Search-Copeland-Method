@@ -40,9 +40,11 @@ def score_comparison(indexes, deletion_copeland_scores, copeland_scores):
     id_of_deletion_winner = indexes[deletion_copeland_scores.index(deletion_winner_cs)] # ID of Copeland winner of deletion algorithm 
     ground_truth_score_of_deletion_winner = copeland_scores[id_of_deletion_winner] # Ground Truth Copeland Score of defined ID
     ground_truth_winner_cs = max(copeland_scores) # Ground Truth Copeland Winner
-    print("        Reliability: GT Winner vs Deletion Winner(on GT)       :"+ str(ground_truth_winner_cs / ground_truth_score_of_deletion_winner))
-    print("        Gap:         Deletion Winner(on GT) vs Deletion Winner :"+ str(abs(deletion_winner_cs - ground_truth_score_of_deletion_winner) / ground_truth_score_of_deletion_winner))
-
+    print("        Gap:         GT Winner vs Deletion Winner(on GT)       :"+ str(abs(ground_truth_winner_cs - ground_truth_score_of_deletion_winner) / ground_truth_winner_cs))
+    print("        Reliability: Deletion Winner(on GT) vs Deletion Winner :"+ str(abs(deletion_winner_cs - ground_truth_score_of_deletion_winner) / ground_truth_score_of_deletion_winner))
+    # Print the IDs and scores of the deletion winner and ground truth winner.
+    # Gap is measure of quality of candidate(how good of a solution we picked), reliability is copeland score on the pool close to the copeland score on the GT. 
+    # Absolute reliability: difference b/w 
 def deletionCopeland(utility_profile, step, surviving_candidates, budget):
     # Processing the data.
     candidates = len(utility_profile)
@@ -191,21 +193,21 @@ def change_frame_rate(file):
 if __name__ == "__main__":
     SHOW_PLOTS_DURING_EXECUTION = False
     PLOT_GIFS = True
-    benchmarks = [ "photo_placement_bipolar"]
+    benchmarks = ["scheduling"] # photo_placement_bipolar, "scheduling"
     step = 100
-    surviving_candidates = 50
-    budget = 500
-    profile_types = ["inverted", "normal"] # "random", "search_more"
+    surviving_candidates = 60
+    budget = 400
+    profile_types = ["inverted", "normal", "random"] #  "search_more"
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
-        for i in range(1,10):  # , '1','2','3','4', '5', '6'
+        for i in range(4,5):  # , '1','2','3','4', '5', '6'
             for profile_type in profile_types:
                 try:
                     print("    " + profile_type+str(i))
                     plot(benchmark, profile_type+str(i), step,
                             surviving_candidates, budget, SHOW_PLOTS_DURING_EXECUTION)
-                    # plot_gif(benchmark, profile_type+str(i),
-                    #             step, surviving_candidates, budget)
+                    plot_gif(benchmark, profile_type+str(i),
+                                step, surviving_candidates, budget)
                 except Exception as e:
                     print(e)
                     None

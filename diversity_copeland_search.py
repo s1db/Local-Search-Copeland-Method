@@ -16,7 +16,7 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     # Initialize the model 
     m = Model(model_path) 
     # Solver and instance definition
-    gecode = Solver.lookup("chuffed")
+    gecode = Solver.lookup("gecode")
     instance = Instance(gecode, m)
     instance.add_file("./models/" + model + "/data/" + datafile + ".dzn")
     save_at = model+"_profiles/"
@@ -43,7 +43,8 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     restart = True
     seed = 0
     copeland_score = []
-    while search_more and no_solutions <= budget:
+    while search_more and no_solutions < budget:
+        # print(no_solutions)
         with instance.branch() as inst:
             if not restart: # once we have solutions, it makes sense to maximize diversity
                 inst.add_string("solve maximize diversity_abs;")
@@ -51,7 +52,7 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
                 inst["old_solutions"] = np.stack(sol_pool, axis=0)[:,1:].flatten().tolist()
             else: # otherwise, we just aim to satisfy the constraints
                 inst.add_string("solve satisfy;")
-                #inst.add_string("solve :: int_search(diversity_variables_of_interest, input_order, indomain_random, complete) satisfy;")
+                # inst.add_string("solve :: int_search(diversity_variables_of_interest, input_order, indomain_random, complete) satisfy;")
                 inst["old_solutions"] = []
                 restart = False
 
@@ -69,7 +70,7 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
                 else:
                     restart = True
                     seed = random.randint(0, 1000000)
-                    # print("Restarting with seed: ", seed)
+                    print("Restarting with seed: ", seed)
             search_more = res.status in {Status.SATISFIED, Status.ALL_SOLUTIONS, Status.OPTIMAL_SOLUTION}
         if no_solutions % 10 == 0:
             print(no_solutions)
@@ -82,7 +83,6 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     print(len(sol_pool))
     print(len(copeland_score))
     # Sanity Check
-    assert len(sol_pool) == len(copeland_score)
     return sol_pool, copeland_score
 
 def deletion(utility_profile_segment, sol_pool, surviving_candidates):
@@ -138,20 +138,28 @@ def generatePlot(directory, filename, true_copeland_score, not_deleted_candidate
         plt.show()
 
 if __name__ == "__main__":
-    benchmarks = ["project_assignment", "photo_placement_bipolar"]
-    benchmark = benchmarks[1]
-    directory = "./models/"+benchmark+"/data"
-    datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))][-2:-1]
-    print(datafiles)
-    for datafile in datafiles:
+    benchmarks = ["photo_placement_bipolar"] # "project_assignment", "photo_placement_bipolar",
+    # benchmark = benchmarks[0]
+    for benchmark in benchmarks:
+        directory = "./models/"+benchmark+"/data"
+        datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]
+        print(datafiles)
+        datafile = datafiles[-1]
         pickled_file = open(benchmark + "_profiles/normal" + datafile+".vt", "rb")
         gt_pref_profile = pickle.load(pickled_file)
         gt_util_profile = pickle.load(pickled_file)
         gt_copeland_score = pickle.load(pickled_file)
         gt_copeland_score = [i/len(gt_copeland_score) for i in gt_copeland_score]
-        solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 60, 30, 80)
-        ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
-        print(ids_in_complete_search)
-        print(copeland_scores)
-        generatePlot(benchmark, datafile, gt_copeland_score, ids_in_complete_search, copeland_scores, True)
-        dc.score_comparison(ids_in_complete_search, copeland_scores, gt_copeland_score)
+        try:
+            solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 100, 60, 400)
+            ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
+            if len(solutions) == len(copeland_scores):
+                generatePlot(benchmark, datafile, gt_copeland_score, ids_in_complete_search, copeland_scores, True)
+                dc.score_comparison(ids_in_complete_search, copeland_scores, gt_copeland_score)
+            else:
+                print(ids_in_complete_search)
+                print(copeland_scores)
+                print("NOT ENOUGH SOLUTIONS IN COMPLETE POOL")
+        except Exception as e:
+            print("TIMEOUT")
+            print(e)

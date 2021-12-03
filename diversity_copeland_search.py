@@ -49,11 +49,15 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
             if not restart: # once we have solutions, it makes sense to maximize diversity
                 inst.add_string("solve maximize diversity_abs;")
                 # removes the id from the solutions
-                inst["old_solutions"] = np.stack(sol_pool, axis=0)[:,1:].flatten().tolist()
+                solution_pool_mzn = np.stack(sol_pool, axis=0)[:,1:].flatten().tolist()
+                inst["old_solutions"] = solution_pool_mzn
+                all_solutions_mzn =  np.stack(list(all_solutions_seen), axis=0).flatten().tolist()
+                inst["all_seen_solutions"] = all_solutions_mzn
             else: # otherwise, we just aim to satisfy the constraints
                 inst.add_string("solve satisfy;")
                 # inst.add_string("solve :: int_search(diversity_variables_of_interest, input_order, indomain_random, complete) satisfy;")
                 inst["old_solutions"] = []
+                inst["all_seen_solutions"] = []
                 restart = False
 
             # , intermediate_solutions=True, all_solutions=True
@@ -139,6 +143,7 @@ def generatePlot(directory, filename, true_copeland_score, not_deleted_candidate
 
 if __name__ == "__main__":
     benchmarks = ["photo_placement_bipolar"] # "project_assignment", "photo_placement_bipolar",
+    benchmarks = ["scheduling"]
     # benchmark = benchmarks[0]
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"

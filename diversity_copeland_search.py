@@ -241,5 +241,5 @@ if __name__ == "__main__":
                 print(copeland_scores)
                 print("NOT ENOUGH SOLUTIONS IN COMPLETE POOL")
         except Exception as e:
-            print("TIMEOUT")
             print(e)
+            print("TIMEOUT")

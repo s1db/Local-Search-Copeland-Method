@@ -94,7 +94,6 @@ def plot(directory, filename, step, surviving_candidates, budget, show_plots_dur
     pickled_file = open(directory + "_profiles/" + filename+".vt", "rb")
     preference_profile = pickle.load(pickled_file)
     utility_profile = pickle.load(pickled_file)
-    true_copeland_score = None
     # Processing the data.
     candidates = len(utility_profile)
     agents = len(utility_profile[0])
@@ -102,10 +101,12 @@ def plot(directory, filename, step, surviving_candidates, budget, show_plots_dur
     # Augmenting preference profile with IDs.
     utility_profile = np.insert(
         utility_profile, 0, range(candidates), axis=1)
-
-    score_list = ic.pairwiseScoreCalcListFull(
-        utility_profile[:, 1:], candidates, agents)
-    true_copeland_score = ic.copelandScoreFull(score_list, candidates, agents)
+    if "normal" == filename[0:6]:
+        true_copeland_score = pickle.load(pickled_file)
+    else:
+        score_list = ic.pairwiseScoreCalcListFull(
+            utility_profile[:, 1:], candidates, agents)
+        true_copeland_score = ic.copelandScoreFull(score_list, candidates, agents)
     # Relative Copeland Score
     true_copeland_score = [i/candidates for i in true_copeland_score]
     pickled_file.close()
@@ -197,17 +198,17 @@ if __name__ == "__main__":
     step = 100
     surviving_candidates = 60
     budget = 400
-    profile_types = ["inverted", "normal", "random"] #  "search_more"
+    profile_types = ["normal"] #  "search_more", "inverted",  "random"
     for benchmark in benchmarks:
         print("🟢 Running " + benchmark)
-        for i in range(4,5):  # , '1','2','3','4', '5', '6'
+        for i in range(5,6):  # , '1','2','3','4', '5', '6'
             for profile_type in profile_types:
                 try:
                     print("    " + profile_type+str(i))
                     plot(benchmark, profile_type+str(i), step,
                             surviving_candidates, budget, SHOW_PLOTS_DURING_EXECUTION)
-                    plot_gif(benchmark, profile_type+str(i),
-                                step, surviving_candidates, budget)
+                    # plot_gif(benchmark, profile_type+str(i),
+                    #             step, surviving_candidates, budget)
                 except Exception as e:
                     print(e)
                     None

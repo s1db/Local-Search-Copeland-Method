@@ -26,7 +26,7 @@ def generatePreferenceProfile(model, datafile):
     print(model_file)
     m = Model(model_file) # "./models/photo_placement.mzn"
     # Find the MiniZinc solver configuration for Gecode
-    gecode = Solver.lookup("gecode")
+    gecode = Solver.lookup("chuffed")
     # Create an Instance of the n-Queens model for Gecode
     instance = Instance(gecode, m)
     instance.add_file("./models/" + model + "/data/" + datafile + ".dzn")
@@ -148,6 +148,7 @@ def generatePreferenceProfile(model, datafile):
 
 if __name__ == "__main__":
     benchmarks = ["photo_placement_bipolar", "vehicle_routing", "scheduling", ] #, "photo_placement_bipolar", "scheduling", "vehicle_routing"
+    benchmarks = ["scheduling"]
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"
         datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]

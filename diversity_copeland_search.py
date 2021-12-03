@@ -7,8 +7,29 @@ import random
 import pickle
 import matplotlib.pyplot as plt
 from datetime import timedelta
+import os
+from pathlib import Path
 
 from minizinc import Instance, Model, Result, Solver, Status
+
+from shutil import copyfile
+
+debug_dir = ("debug")
+debug = True
+
+def create_debug_folder():
+    if not os.path.isdir(debug_dir):
+        os.makedirs(debug_dir)
+
+def log_and_debug_generated_files(child, model_counter):
+    with child.files() as files:
+        #print(files)
+        if debug:
+            # copy files to a dedicated debug folder
+            for item in files[1:]:
+                filename = os.path.basename(item)
+                base, extension = os.path.splitext(filename)
+                copyfile(item, os.path.join(debug_dir, f"mzn_condorcet_{model_counter}.{extension}"))
 
 def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     model_path = "./models/"+model+"/"+model+".mzn"
@@ -46,23 +67,43 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
     while search_more and no_solutions < budget:
         # print(no_solutions)
         with instance.branch() as inst:
+            # disable already seen solutions
+            for sol in all_solutions_seen:
+                inst.add_string(f"constraint diversity_variables_of_interest != {list(sol)};\n")
+
             if not restart: # once we have solutions, it makes sense to maximize diversity
                 inst.add_string("solve maximize diversity_abs;")
                 # removes the id from the solutions
-                solution_pool_mzn = np.stack(sol_pool, axis=0)[:,1:].flatten().tolist()
-                inst["old_solutions"] = solution_pool_mzn
-                all_solutions_mzn =  np.stack(list(all_solutions_seen), axis=0).flatten().tolist()
-                inst["all_seen_solutions"] = all_solutions_mzn
+                solution_pool_mzn = np.stack(sol_pool, axis=0)[:,1:].tolist()
+                #inst["old_solutions"] = solution_pool_mzn
+                # UGLY workaround to avoid problems with too long jsons
+                dec_vars_per_sol = len(sol_pool[0]) - 1
+                s = "|\n".join([",".join(list(str(i) for i in l)) for l in solution_pool_mzn])
+                s = f"[| {s} |]"
+                inst.add_string(f"\nold_solutions = {s};\n")
+                #all_solutions_mzn =  np.stack(list(all_solutions_seen), axis=0).flatten().tolist()
+                #inst["all_seen_solutions"] = all_solutions_mzn
             else: # otherwise, we just aim to satisfy the constraints
                 inst.add_string("solve satisfy;")
                 # inst.add_string("solve :: int_search(diversity_variables_of_interest, input_order, indomain_random, complete) satisfy;")
                 inst["old_solutions"] = []
-                inst["all_seen_solutions"] = []
+                #inst["all_seen_solutions"] = []
                 restart = False
 
             # , intermediate_solutions=True, all_solutions=True
-            res = inst.solve(random_seed=seed, timeout = timeout)
-            if res.solution is not None:
+            if debug:
+                log_and_debug_generated_files(inst, no_solutions)
+
+            call_succeeded = True
+            try:
+                #res = inst.solve(random_seed=seed, timeout = timeout, verbose=True, debug_output=Path(f"debug/debug_output{no_solutions}.txt"))
+                res = inst.solve(random_seed=seed, timeout=timeout, optimisation_level=2)
+            except Exception as e:
+                print("❌ FAILED ❌")
+                print(e)
+                call_succeeded = False
+
+            if call_succeeded and res.solution is not None:
                 if tuple(res["diversity_variables_of_interest"]) not in all_solutions_seen:
                     all_solutions_seen.add(tuple(res["diversity_variables_of_interest"]))
                     all_solutions_utilities.append(res["util_per_agent"])
@@ -71,6 +112,8 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
                     # The utility from solution obtained
                     pref_profile.append([no_solutions] + res["util_per_agent"])
                     no_solutions += 1
+                    # add a constraint that a solution cannot re-appear
+                    next_sol = res["diversity_variables_of_interest"]
                 else:
                     restart = True
                     seed = random.randint(0, 1000000)
@@ -144,6 +187,8 @@ def generatePlot(directory, filename, true_copeland_score, not_deleted_candidate
 if __name__ == "__main__":
     benchmarks = ["photo_placement_bipolar"] # "project_assignment", "photo_placement_bipolar",
     benchmarks = ["scheduling"]
+    create_debug_folder()
+
     # benchmark = benchmarks[0]
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"
@@ -156,7 +201,8 @@ if __name__ == "__main__":
         gt_copeland_score = pickle.load(pickled_file)
         gt_copeland_score = [i/len(gt_copeland_score) for i in gt_copeland_score]
         try:
-            solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 100, 60, 400)
+            solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 100, 60, 150)
+            #solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 30, 10, 50)
             ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
             if len(solutions) == len(copeland_scores):
                 generatePlot(benchmark, datafile, gt_copeland_score, ids_in_complete_search, copeland_scores, True)

@@ -97,11 +97,40 @@ def diversityMaxCopeland(model, datafile, step, surviving_candidates, budget):
             call_succeeded = True
             try:
                 #res = inst.solve(random_seed=seed, timeout = timeout, verbose=True, debug_output=Path(f"debug/debug_output{no_solutions}.txt"))
-                res = inst.solve(random_seed=seed, timeout=timeout, optimisation_level=2)
+                res = inst.solve(random_seed=seed, timeout=timeout, optimisation_level=3, **{"allow-unbounded-vars":True})
             except Exception as e:
                 print("❌ FAILED ❌")
                 print(e)
                 call_succeeded = False
+            if not call_succeeded:
+                try:
+                    # res = inst.solve(random_seed=seed, timeout = timeout, verbose=True, debug_output=Path(f"debug/debug_output{no_solutions}.txt"))
+                    call_succeeded = True
+                    res = inst.solve(random_seed=seed, timeout=timeout, optimisation_level=2, **{"allow-unbounded-vars":True})
+                except Exception as e:
+                    print("❌ FAILED ❌")
+                    print(e)
+                    call_succeeded = False
+
+            if not call_succeeded:
+                try:
+                    # res = inst.solve(random_seed=seed, timeout = timeout, verbose=True, debug_output=Path(f"debug/debug_output{no_solutions}.txt"))
+                    call_succeeded = True
+                    res = inst.solve(random_seed=seed, timeout=timeout, optimisation_level=4, **{"allow-unbounded-vars":True})
+                except Exception as e:
+                    print("❌ FAILED ❌")
+                    print(e)
+                    call_succeeded = False
+
+            if not call_succeeded:
+                try:
+                    # res = inst.solve(random_seed=seed, timeout = timeout, verbose=True, debug_output=Path(f"debug/debug_output{no_solutions}.txt"))
+                    call_succeeded = True
+                    res = inst.solve(random_seed=seed, timeout=timeout, optimisation_level=5, **{"allow-unbounded-vars":True})
+                except Exception as e:
+                    print("❌ FAILED ❌")
+                    print(e)
+                    call_succeeded = False
 
             if call_succeeded and res.solution is not None:
                 if tuple(res["diversity_variables_of_interest"]) not in all_solutions_seen:
@@ -201,7 +230,7 @@ if __name__ == "__main__":
         gt_copeland_score = pickle.load(pickled_file)
         gt_copeland_score = [i/len(gt_copeland_score) for i in gt_copeland_score]
         try:
-            solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 100, 60, 150)
+            solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 100, 60, 300)
             #solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 30, 10, 50)
             ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
             if len(solutions) == len(copeland_scores):

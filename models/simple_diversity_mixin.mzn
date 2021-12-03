@@ -21,7 +21,7 @@ array[int, index_set(diversity_variables_of_interest)] of int: old_solutions;
 %array[int, index_set(diversity_variables_of_interest)] of int: all_seen_solutions;
 
 %array[index_set_1of2(old_solutions), index_set(diversity_variables_of_interest)] of var bool: div_changed;
-array[index_set_1of2(old_solutions), index_set(diversity_variables_of_interest)] of var int: div_abs_dists; 
+array[index_set_1of2(old_solutions), index_set(diversity_variables_of_interest)] of var 0..5000: div_abs_dists;
 
 constraint forall (i in index_set_1of2(old_solutions), j in index_set_2of2(old_solutions)) (
  % div_changed[i, j] = (old_solutions[i, j] != diversity_variables_of_interest[j])  /\
@@ -30,7 +30,7 @@ constraint forall (i in index_set_1of2(old_solutions), j in index_set_2of2(old_s
 
 % ---------------------------------------------------------------------------------------
 % Offered objective functions as decision variables
-var 0..infinity: diversity_abs = sum(div_abs_dists);
+var 0..20000: diversity_abs = sum(div_abs_dists);
 
 %int: div_max_changes = if index_set_1of2(old_solutions) == {} then 0 else max(index_set_1of2(old_solutions)) * max(index_set_2of2(old_solutions)) endif;
 %var 0..div_max_changes: div_count_changed =  sum(div_changed);

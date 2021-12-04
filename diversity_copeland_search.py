@@ -214,32 +214,41 @@ def generatePlot(directory, filename, true_copeland_score, not_deleted_candidate
         plt.show()
 
 if __name__ == "__main__":
-    benchmarks = ["photo_placement_bipolar"] # "project_assignment", "photo_placement_bipolar",
-    benchmarks = ["scheduling"]
-    create_debug_folder()
+    # benchmarks = ["photo_placement_bipolar", "project_assignment", "scheduling", "vehicle_routing"] # "photo_placement_bipolar",
+    # benchmarks = ["scheduling"]
+    # create_debug_folder()
+    benchmarks = {
+    'scheduling':[[4,100,60,120],[5,100,60,120]],
+    'photo_placement_bipolar':[[7, 100, 60, 150],[8, 100, 60, 150]],
+    'vehicle_routing':[[3,20,10,20],[4,20,10,20]],
+    'project_assignment':[[2,50,30,160],[3,50,30,160]]
+    }
 
     # benchmark = benchmarks[0]
     for benchmark in benchmarks:
         directory = "./models/"+benchmark+"/data"
-        datafiles = [f[:-4] for f in listdir(directory) if isfile(join(directory, f))]
-        print(datafiles)
-        datafile = datafiles[-1]
-        pickled_file = open(benchmark + "_profiles/normal" + datafile+".vt", "rb")
-        gt_pref_profile = pickle.load(pickled_file)
-        gt_util_profile = pickle.load(pickled_file)
-        gt_copeland_score = pickle.load(pickled_file)
-        gt_copeland_score = [i/len(gt_copeland_score) for i in gt_copeland_score]
-        try:
-            solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 100, 60, 300)
-            #solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 30, 10, 50)
-            ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
-            if len(solutions) == len(copeland_scores):
-                generatePlot(benchmark, datafile, gt_copeland_score, ids_in_complete_search, copeland_scores, True)
-                dc.score_comparison(ids_in_complete_search, copeland_scores, gt_copeland_score)
-            else:
-                print(ids_in_complete_search)
-                print(copeland_scores)
-                print("NOT ENOUGH SOLUTIONS IN COMPLETE POOL")
-        except Exception as e:
-            print(e)
-            print("TIMEOUT")
+        datafiles = benchmarks[benchmark]
+        for datafile in datafiles:
+            name = str(datafile[0])
+            step = datafile[1]
+            survivors = datafile[2]
+            budget = datafile[3]
+            pickled_file = open(benchmark + "_profiles/normal" + name+".vt", "rb")
+            gt_pref_profile = pickle.load(pickled_file)
+            gt_util_profile = pickle.load(pickled_file)
+            gt_copeland_score = pickle.load(pickled_file)
+            gt_copeland_score = [i/len(gt_copeland_score) for i in gt_copeland_score]
+            try:
+                solutions, copeland_scores = diversityMaxCopeland(benchmark, name, step, survivors, budget)
+                #solutions, copeland_scores = diversityMaxCopeland(benchmark, datafile, 30, 10, 50)
+                ids_in_complete_search = getID(np.array(solutions)[:,1:].tolist(), gt_pref_profile.tolist())
+                if len(solutions) == len(copeland_scores):
+                    generatePlot(benchmark, name, gt_copeland_score, ids_in_complete_search, copeland_scores, True)
+                    dc.score_comparison(ids_in_complete_search, copeland_scores, gt_copeland_score)
+                else:
+                    print(ids_in_complete_search)
+                    print(copeland_scores)
+                    print("NOT ENOUGH SOLUTIONS IN COMPLETE POOL")
+            except Exception as e:
+                print(e)
+                print("TIMEOUT")

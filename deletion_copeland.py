@@ -194,19 +194,31 @@ def change_frame_rate(file):
 if __name__ == "__main__":
     SHOW_PLOTS_DURING_EXECUTION = False
     PLOT_GIFS = True
-    benchmarks = ["scheduling"] # photo_placement_bipolar, "scheduling"
-    step = 100
-    surviving_candidates = 60
-    budget = 400
+    # benchmarks = ["scheduling"] # photo_placement_bipolar, "scheduling"
+    benchmarks = {
+        'scheduling':[[4,100,60,120],[5,100,60,120]],
+        'photo_placement_bipolar':[[7, 100, 60, 150],[8, 100, 60, 150]],
+        'vehicle_routing':[[3,20,10,20],[4,20,10,20]],
+        'project_assignment':[[2,50,30,160],[3,50,30,160]]
+    }
+
+    # step = 100
+    # surviving_candidates = 60
+    # budget = 400
     profile_types = ["normal"] #  "search_more", "inverted",  "random"
     for benchmark in benchmarks:
+        datafiles = benchmarks[benchmark]
         print("🟢 Running " + benchmark)
-        for i in range(5,6):  # , '1','2','3','4', '5', '6'
+        for datafile in datafiles:  # , '1','2','3','4', '5', '6'
+            i = str(datafile[0])
+            step = datafile[1]
+            survivors = datafile[2]
+            budget = datafile[3]
             for profile_type in profile_types:
                 try:
                     print("    " + profile_type+str(i))
                     plot(benchmark, profile_type+str(i), step,
-                            surviving_candidates, budget, SHOW_PLOTS_DURING_EXECUTION)
+                            survivors, budget, SHOW_PLOTS_DURING_EXECUTION)
                     # plot_gif(benchmark, profile_type+str(i),
                     #             step, surviving_candidates, budget)
                 except Exception as e:
